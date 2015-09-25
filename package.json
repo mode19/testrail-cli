@@ -14,6 +14,7 @@
     "junit",
     "xml"
   ],
+  "repository": "tableau-mkt/testrail-cli",
   "author": "Eric Peterson",
   "license": "MIT",
   "dependencies": {

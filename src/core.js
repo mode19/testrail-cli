@@ -27,9 +27,10 @@ module.exports = function constructCore(TestRail, configs, process, console) {
         if (configs.debug) {
           console.error(message);
         }
-      };
+      },
+      commands;
 
-  return {
+  commands = {
     /**
      * Initializes/adds a run to TestRail for the given project ID.
      *
@@ -165,47 +166,56 @@ module.exports = function constructCore(TestRail, configs, process, console) {
         fileContents.forEach(function (rawXml) {
           var xml = XmlParser(rawXml);
 
-          if (!xml.root.name || xml.root.name !== 'testsuite') {
-            console.error('Invalid xml. Expected root name testsuite');
-            debug(xml);
-            process.exit(1);
-          }
+          (function parseXmlIntoCaseResults(xml) {
+            if (xml.root.name === 'testsuite' && xml.root.children && xml.root.children.length) {
+              xml.root.children.forEach(function (testcase) {
+                var caseResult = {};
 
-          if (xml.root && xml.root.children && xml.root.children.length) {
-            xml.root.children.forEach(function (testcase) {
-              var caseResult = {};
+                if (testcase.name && testcase.name === 'testcase') {
+                  console.log(testcase.attributes.name);
+                  // Universal to pass or fail.
+                  caseResult.case_id = commands._resolveCaseIdFrom(testcase);
 
-              if (testcase.name && testcase.name === 'testcase') {
-                // Universal to pass or fail.
-                caseResult.case_id = configs.caseNameToIdMap[HtmlEntities.decode(testcase.attributes.name)];
+                  // Only supply an elapsed time if a time was reported.
+                  if (testcase.attributes.hasOwnProperty('time')) {
+                    // It's possible a time was provided, but it's 0. Round up!
+                    testcase.attributes.time = testcase.attributes.time == 0 ? 1 : testcase.attributes.time;
+                    caseResult.elapsed = Math.ceil(testcase.attributes.time) + 's';
+                  }
 
-                // Only supply an elapsed time if a time was reported.
-                if (testcase.attributes.hasOwnProperty('time')) {
-                  // It's possible a time was provided, but it's 0. Round up!
-                  caseResult.elapsed = Math.ceil(testcase.attributes.time || 1) + 's';
-                }
+                  // If testcase.children is empty, the test case passed. 1 means pass.
+                  if (testcase.children.length === 0) {
+                    caseResult.status_id = 1;
+                  }
+                  // Otherwise, there was a failure. 5 means failure. Add fail message.
+                  else {
+                    caseResult.status_id = 5;
+                    caseResult.comment = HtmlEntities.decode(testcase.children[0].attributes.message);
+                  }
 
-                // If testcase.children is empty, the test case passed. 1 means pass.
-                if (testcase.children.length === 0) {
-                  caseResult.status_id = 1;
+                  // Only append tests we've mapped to a TestRail case.
+                  if (caseResult.case_id) {
+                    debug('Appending case result:'); debug(caseResult);
+                    caseResults.push(caseResult);
+                  }
+                  else {
+                    debug('Unable to map testCase to TestRail CaseID:'); debug(testcase);
+                  }
                 }
-                // Otherwise, there was a failure. 5 means failure. Add fail message.
-                else {
-                  caseResult.status_id = 5;
-                  caseResult.comment = HtmlEntities.decode(testcase.children[0].attributes.message);
-                }
-
-                // Only append tests we've mapped to a TestRail case.
-                if (caseResult.case_id) {
-                  debug('Appending case result:'); debug(caseResult);
-                  caseResults.push(caseResult);
-                }
-                else {
-                  debug('Unable to map testCase to TestRail CaseID:'); debug(testcase);
-                }
-              }
-            });
-          }
+              });
+            }
+            else if (xml.root.name === 'testsuites' && xml.root.children) {
+              xml.root.children.forEach(function (testSuite) {
+                testSuite.root = testSuite;
+                parseXmlIntoCaseResults(testSuite);
+              });
+            }
+            else {
+              console.error('Invalid xml. Expected root name testsuite');
+              debug(xml);
+              process.exit(1);
+            }
+          })(xml);
         });
 
         // Post results if we had any.
@@ -243,6 +253,40 @@ module.exports = function constructCore(TestRail, configs, process, console) {
           console.log('Did not parse any test XML files.');
         }
       });
+    },
+
+    /**
+     * Helper method to map a testcase (xUnit) to a TestRail caseId.
+     *
+     * @param {object} testCase
+     *   An object representing a single testcase. Should include minimally:
+     *   - attributes.name: The name of the test run.
+     *   - attributes.class: The class associated with this testcase.
+     *
+     * @return {int}|null
+     *   Returns the caseId or null on failure to match.
+     */
+    _resolveCaseIdFrom: function resolveCaseIdFromTestCase(testCase) {
+      var testClass = HtmlEntities.decode(testCase.attributes.classname),
+          testName = HtmlEntities.decode(testCase.attributes.name);
+
+      // First check if there's a matching caseClassAndNameToIdMap class.
+      if (configs.caseClassAndNameToIdMap && configs.caseClassAndNameToIdMap[testClass]) {
+        // If there's a matching name nested underneath the class, return it.
+        if (configs.caseClassAndNameToIdMap[testClass][testName]) {
+          return configs.caseClassAndNameToIdMap[testClass][testName];
+        }
+      }
+
+      // Then check if there's a matching caseNameToIdMap name.
+      if (configs.caseNameToIdMap && configs.caseNameToIdMap[testName]) {
+        return configs.caseNameToIdMap[testName];
+      }
+
+      // Otherwise, return null.
+      return null;
     }
   };
+
+  return commands;
 };

@@ -58,11 +58,21 @@ suiteId: 2
 
 # A mapping that relates testcase names to TestRail case IDs. The testcase name
 # (on the left) represents the "name" attribute on the "testcase" element in
-# your junit XML files.
+# your xUnit XML files.
 caseNameToIdMap:
   "Name of Test Case 7": 7
   "Another Test Name": 8
   "Not to be confused with the class name": 14
+
+# If you have complex test suites where a case name may be identical across
+# multiple classes, an alternative mapping can be provided like so:
+caseClassAndNameToIdMap:
+  "Name of xUnit Class 1":
+    "Name of TestCase 7": 7
+    "Another Test Name": 8
+  "Name of another xUnit class":
+    "Another Test Name": 88
+    "className::testName14": 14
 ```
 
 
@@ -111,7 +121,7 @@ Used to report test results for a given test run. On success, the command will
 report the number of case runs successfully reported.
 
 Note that this tool makes the assumption that you have created a map in your
-`.testrail-cli.yml` file that maps test case names (as reported in your junit
+`.testrail-cli.yml` file that maps test case names (as reported in your xUnit
 XML) to test case IDs in TestRail. An example is highlighted in the
 "configuration" section above.
 
@@ -119,7 +129,7 @@ __Arguments__
 - `--runId` or `-r`
   - Required. The ID of the test run for which you wish to report test results.
 - `--file` or `-f`
-  - Required. The path to a junit XML file (or a path to a directory containing
+  - Required. The path to a xUnit XML file (or a path to a directory containing
     such files).
 
 __Examples__
@@ -128,10 +138,10 @@ Report a test run for a single XML file and known runId.
 testrail-cli report --runId=5 --file=logs/junit.xml
 ```
 
-Report a test run for a directory of junit XML files using a runId pulled from
+Report a test run for a directory of xUnit XML files using a runId pulled from
 environment variables.
 
-testrail-cli report -r $TESTRAIL_RUNID -f /path/to/junit/
+testrail-cli report -r $TESTRAIL_RUNID -f /path/to/xml/
 
 #### `testrail-cli finish`
 
