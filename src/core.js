@@ -167,12 +167,12 @@ module.exports = function constructCore(TestRail, configs, process, console) {
           var xml = XmlParser(rawXml);
 
           (function parseXmlIntoCaseResults(xml) {
+            // If the root represents a single testsuite, treat it as such.
             if (xml.root.name === 'testsuite' && xml.root.children && xml.root.children.length) {
               xml.root.children.forEach(function (testcase) {
                 var caseResult = {};
 
                 if (testcase.name && testcase.name === 'testcase') {
-                  console.log(testcase.attributes.name);
                   // Universal to pass or fail.
                   caseResult.case_id = commands._resolveCaseIdFrom(testcase);
 
@@ -204,12 +204,15 @@ module.exports = function constructCore(TestRail, configs, process, console) {
                 }
               });
             }
+            // If the root consists of multiple test suites, recurse.
             else if (xml.root.name === 'testsuites' && xml.root.children) {
               xml.root.children.forEach(function (testSuite) {
+                // The base case (above) expects items on the .root property.
                 testSuite.root = testSuite;
                 parseXmlIntoCaseResults(testSuite);
               });
             }
+            // If we map to neither of the above expectations, abort.
             else {
               console.error('Invalid xml. Expected root name testsuite');
               debug(xml);
