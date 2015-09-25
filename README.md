@@ -68,7 +68,9 @@ caseNameToIdMap:
 
 ## Commands
 
-A list of currently supported commands and their arguments/flags.
+A list of currently supported commands and their arguments/flags. Note that
+every command can take a `--debug` flag, which outputs verbose information to
+stderr.
 
 #### `testrail-cli init`
 

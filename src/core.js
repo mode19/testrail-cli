@@ -22,7 +22,12 @@ module.exports = function constructCore(TestRail, configs, process, console) {
   console = console || global.console;
 
   var apiCallsAttempted = 0,
-      maxCallAttemptsAllowed = 5;
+      maxCallAttemptsAllowed = 5,
+      debug = function debug(message) {
+        if (configs.debug) {
+          console.error(message);
+        }
+      };
 
   return {
     /**
@@ -40,26 +45,33 @@ module.exports = function constructCore(TestRail, configs, process, console) {
      *   Optional. The ID of a milestone with which to associate this run.
      */
     init: function initializeTestRun(projectId, name, suiteId, description, milestoneId) {
+      debug('Attempting to initialize test run.');
+
       if (!projectId || !name) {
         console.error('You must supply a projectId (-p or --projectId=) and runName (-n or --runName=).');
+        debug('projectId: "' + projectId + '", name: "' + name + '"');
         process.exit(1);
       }
 
       TestRail.addRun(projectId, suiteId, name, description, milestoneId, function (response) {
+        debug('Received response from TestRail.');
+
         response = typeof response === 'string' ? JSON.parse(response) : response;
         if (response.id) {
           console.log(response.id);
+          debug(response);
           process.exit(0);
         }
         else {
           // Retry if we're under the limit.
           if (apiCallsAttempted < maxCallAttemptsAllowed) {
             apiCallsAttempted++;
+            debug('Failed to initialize run. Attempt #' + apiCallsAttempted);
             initializeTestRun(projectId, name, suiteId, description, milestoneId);
           }
           else {
-            console.error('Error initializing test run in TestRail.');
-            console.error(response);
+            console.error('Error initializing test run in TestRail: ' + response.error);
+            debug(response);
             process.exit(1);
           }
         }
@@ -73,29 +85,35 @@ module.exports = function constructCore(TestRail, configs, process, console) {
      *   Required. The ID of the test run to close.
      */
     finish: function closeTestRun(runId) {
+      debug('Attempting to close test run.');
+
       if (!runId) {
         console.error('You must supply a runId (-r or --runId=).');
+        debug('runId: ' + runId);
         process.exit(1);
       }
 
       TestRail.closeRun(runId, function (response) {
+        debug('Received response from TestRail.');
+
         response = typeof response === 'string' ? JSON.parse(response) : response;
         if (response.completed_on) {
           console.log('Successfully closed test run ' + runId + '.');
+          debug(response);
           process.exit(0);
         }
         else {
           if (apiCallsAttempted < maxCallAttemptsAllowed) {
             apiCallsAttempted++;
+            debug('Failed to close test run. Attempt #' + apiCallsAttempted);
             closeTestRun(runId);
           }
           else {
-            console.error('There was an error closing the test run.');
-            console.error(response);
+            console.error('There was an error closing the test run: ' + response.error);
+            debug(response);
             process.exit(1);
           }
         }
-        console.log(response);
       });
     },
 
@@ -113,8 +131,11 @@ module.exports = function constructCore(TestRail, configs, process, console) {
           caseResults = [],
           fsStat;
 
+      debug('Attempting to report runs for test cases.');
+
       if (!fileOrDir || !runId) {
         console.error('You must supply a file (-f or --file=) and runId (-r or --runId=).');
+        debug('file: "' + fileOrDir + '", runId: "' + runId + '"');
         process.exit(1);
       }
 
@@ -137,6 +158,7 @@ module.exports = function constructCore(TestRail, configs, process, console) {
       }
 
       // Asynchronously read in all files in the file array.
+      debug('Attempting to parse files:'); debug(files);
       Promise.all(files.map(function readFilesPromises(file) {
         return readFile(file, 'utf8');
       })).done(function (fileContents) {
@@ -145,6 +167,7 @@ module.exports = function constructCore(TestRail, configs, process, console) {
 
           if (!xml.root.name || xml.root.name !== 'testsuite') {
             console.error('Invalid xml. Expected root name testsuite');
+            debug(xml);
             process.exit(1);
           }
 
@@ -168,6 +191,7 @@ module.exports = function constructCore(TestRail, configs, process, console) {
                   caseResult.comment = HtmlEntities.decode(testcase.children[0].attributes.message);
                 }
 
+                debug('Appending case result:'); debug(caseResult);
                 caseResults.push(caseResult);
               }
             });
@@ -177,21 +201,28 @@ module.exports = function constructCore(TestRail, configs, process, console) {
         // Post results if we had any.
         if (caseResults.length) {
           (function addResultsForCasesAttempt() {
+            debug('Attempting to send case results to TestRail');
+
             TestRail.addResultsForCases(runId, {results: caseResults}, function (response) {
               response = typeof response === 'string' ? JSON.parse(response) : response;
 
+              debug('Received response from TestRail.');
+
               if (response instanceof Array && response.length) {
                 console.log('Successfully uploaded ' + response.length + ' test case results to TestRail.');
+                debug(response);
                 process.exit(0);
               }
               else {
                 if (apiCallsAttempted < maxCallAttemptsAllowed) {
                   apiCallsAttempted++;
+                  debug('Failed to upload case runs. Attempt #' + apiCallsAttempted);
                   addResultsForCasesAttempt();
                 }
                 else {
-                  console.error('There was an error uploading test results to TestRail.');
-                  console.error(response);
+                  console.error('There was an error uploading test results to TestRail: ' + response.error);
+                  debug(response);
+                  debug(caseResults);
                   process.exit(1);
                 }
               }
