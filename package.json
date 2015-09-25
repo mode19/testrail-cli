@@ -1,0 +1,27 @@
+{
+  "name": "testrail-cli",
+  "version": "0.1.0",
+  "description": "Command line tool for reporting junit results to testrail.",
+  "preferGlobal": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "testrail-cli": "index.js"
+  },
+  "keywords": [
+    "testrail",
+    "junit",
+    "xml"
+  ],
+  "author": "Eric Peterson",
+  "license": "MIT",
+  "dependencies": {
+    "html-entities": "^1.1.3",
+    "minimist": "^1.2.0",
+    "node-testrail": "stewart-taylor/Node-TestRail#13e5fd9772de560e20e24380a6d4e896b5695d2e",
+    "promise": "^7.0.4",
+    "xml-parser": "^1.2.1",
+    "yamljs": "^0.2.4"
+  }
+}
