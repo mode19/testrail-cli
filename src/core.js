@@ -55,7 +55,7 @@ module.exports = function constructCore(TestRail, configs, process, console) {
           // Retry if we're under the limit.
           if (apiCallsAttempted < maxCallAttemptsAllowed) {
             apiCallsAttempted++;
-            initializeTestRun();
+            initializeTestRun(projectId, name, suiteId, description, milestoneId);
           }
           else {
             console.error('Error initializing test run in TestRail.');
@@ -87,7 +87,7 @@ module.exports = function constructCore(TestRail, configs, process, console) {
         else {
           if (apiCallsAttempted < maxCallAttemptsAllowed) {
             apiCallsAttempted++;
-            closeTestRun();
+            closeTestRun(runId);
           }
           else {
             console.error('There was an error closing the test run.');
