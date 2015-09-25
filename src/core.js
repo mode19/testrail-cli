@@ -178,8 +178,12 @@ module.exports = function constructCore(TestRail, configs, process, console) {
               if (testcase.name && testcase.name === 'testcase') {
                 // Universal to pass or fail.
                 caseResult.case_id = configs.caseNameToIdMap[HtmlEntities.decode(testcase.attributes.name)];
-                caseResult.elapsed = Math.ceil(testcase.attributes.time) + 's';
-                caseResult.version = 'test';
+
+                // Only supply an elapsed time if a time was reported.
+                if (testcase.attributes.hasOwnProperty('time')) {
+                  // It's possible a time was provided, but it's 0. Round up!
+                  caseResult.elapsed = Math.ceil(testcase.attributes.time || 1) + 's';
+                }
 
                 // If testcase.children is empty, the test case passed. 1 means pass.
                 if (testcase.children.length === 0) {
