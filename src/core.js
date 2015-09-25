@@ -191,8 +191,14 @@ module.exports = function constructCore(TestRail, configs, process, console) {
                   caseResult.comment = HtmlEntities.decode(testcase.children[0].attributes.message);
                 }
 
-                debug('Appending case result:'); debug(caseResult);
-                caseResults.push(caseResult);
+                // Only append tests we've mapped to a TestRail case.
+                if (caseResult.case_id) {
+                  debug('Appending case result:'); debug(caseResult);
+                  caseResults.push(caseResult);
+                }
+                else {
+                  debug('Unable to map testCase to TestRail CaseID:'); debug(testcase);
+                }
               }
             });
           }
