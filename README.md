@@ -32,13 +32,19 @@ You must provide TestRail authentication information via environment variables.
 It's assumed that you are storing these securely.
 
 __`TESTRAIL_URL`__ - The URL of your TestRail instance.
-`export TESTRAIL_URL=https://[yourinstance].testrail.net`
+```sh
+export TESTRAIL_URL=https://[yourinstance].testrail.net
+```
 
 __`TESTRAIL_UN`__ - The username/e-mail address to authenticate with
-`export TESTRAIL_UN=user@example.com`
+```sh
+export TESTRAIL_UN=user@example.com
+```
 
 __`TESTRAIL_PW`__ - The password associated with the aforementioned username.
-`export TESTRAIL_PW=yourPasswordhere`
+```sh
+export TESTRAIL_PW=yourPasswordhere
+```
 
 Note that the API must be enabled for your TestRail instance.
 
@@ -104,6 +110,7 @@ __Arguments__
     with this test run.
 
 __Examples__
+
 Start a test run called "Automated Run" against project with ID 5.
 ```sh
 testrail-cli init --projectId=5 --runName="Automated Run"
@@ -112,7 +119,7 @@ testrail-cli init --projectId=5 --runName="Automated Run"
 Start a test run called "Another Run" where the projectId is assumed from a
 `.testrail-cli.yml` file. Stash the runId for later commands.
 ```sh
-export TESTRAIL_RUNID=`testrail-cli init -n "Another Run"
+export TESTRAIL_RUNID=$(testrail-cli init -n "Another Run")
 ```
 
 #### `testrail-cli report`
@@ -133,6 +140,7 @@ __Arguments__
     such files).
 
 __Examples__
+
 Report a test run for a single XML file and known runId.
 ```sh
 testrail-cli report --runId=5 --file=logs/junit.xml
@@ -152,6 +160,7 @@ __Arguments__
   - Required. The ID of the test run you wish to close.
 
 __Examples__
+
 Close a test run based on an ID in an environment variable.
 ```sh
 testrail-cli finish --runId=$TESTRAIL_RUNID
