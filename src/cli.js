@@ -27,7 +27,7 @@ module.exports = function testrailCliFactory(coreFactory, TestRailFactory, argv,
     configs = YAML.load(process.cwd() + '/.testrail-cli.yml');
   }
   catch (Exception) {
-    configs = {projectId: null, caseNameToIdMap: {}};
+    configs = {projectId: null, caseNameToIdMap: {}, caseClassAndNameToIdMap: {}};
   }
 
   // Global configs to pull in.
