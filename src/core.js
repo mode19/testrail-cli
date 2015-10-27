@@ -190,7 +190,9 @@ module.exports = function constructCore(TestRail, configs, process, console) {
                   // Otherwise, there was a failure. 5 means failure. Add fail message.
                   else {
                     caseResult.status_id = 5;
-                    caseResult.comment = HtmlEntities.decode(testcase.children[0].attributes.message);
+                    if (testcase.children[0].attributes.message){
+                      caseResult.comment = HtmlEntities.decode(testcase.children[0].attributes.message);
+                    }
                   }
 
                   // Only append tests we've mapped to a TestRail case.
