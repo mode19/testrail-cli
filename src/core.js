@@ -272,7 +272,7 @@ module.exports = function constructCore(TestRail, configs, process, console) {
      *   Returns the caseId or null on failure to match.
      */
     _resolveCaseIdFrom: function resolveCaseIdFromTestCase(testCase) {
-      var testClass = HtmlEntities.decode(testCase.attributes.classname),
+      var testClass = HtmlEntities.decode(testCase.attributes.class),
           testName = HtmlEntities.decode(testCase.attributes.name);
 
       // First check if there's a matching caseClassAndNameToIdMap class.
